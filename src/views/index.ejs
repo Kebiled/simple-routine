@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>simple-routine</title>
+  <script src="https://unpkg.com/htmx.org"></script>
+</head>
+<style>
+  html {
+    height: 100%;
+  }
+  body {
+    background-color: #FDF1DC;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    margin: 0;
+  }
+  header {
+    padding: 10px;
+  }
+  main {
+    padding: 10px;
+  }
+  footer {
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    background-color: #202020;
+    padding: 10px;
+  }
+  #footer-text {
+    color: #FDF1DC;
+    margin: 0;
+  }
+</style>
+<body>
+  <header>
+    <h2>simple-routine</h2>
+  </header>
+
+  <main>
+    <div hx-get="/next/0" hx-trigger="click" hx-swap="outerHTML">
+      Click here to begin
+    </div>
+  </main>
+
+  <footer>
+    <p id="footer-text">kieran meekan - 2024</p>
+  </footer>
+</body>
+</html>
