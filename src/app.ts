@@ -16,6 +16,18 @@ const TASKS: Task[] = [
   { id: 3, name: "Third Task", status: "pending" },
 ];
 
+function renderNextTask(taskIndex: number | undefined, res: Response) {
+  const task =
+    (taskIndex || taskIndex === 0) && taskIndex < TASKS.length
+      ? TASKS[taskIndex]
+      : null;
+  if (task) {
+    res.render("components/task", { taskIndex, taskName: task.name });
+  } else {
+    res.render("components/finished");
+  }
+}
+
 app.use(express.static("public"));
 
 app.set("view engine", "ejs");
@@ -30,16 +42,22 @@ app.get("/", (req: Request, res: Response) => {
   res.render("index");
 });
 
-app.get("/next/:index", (req: Request, res: Response) => {
-  const taskIndex = parseInt(req.params.index);
-  console.log(`Task Requested. Index: ${taskIndex}`);
-  const task = taskIndex < TASKS.length ? TASKS[taskIndex] : null;
+app.get("/begin", (req: Request, res: Response) => {
+  renderNextTask(0, res);
+});
 
-  if (task) {
-    res.render("components/task", { taskIndex, taskName: task.name });
-  } else {
-    res.render("components/finished");
-  }
+app.post("/task/completed/:taskIndex", (req: Request, res: Response) => {
+  const currentTaskId = parseInt(req.params.taskIndex);
+  console.log("Task completed:", currentTaskId);
+  // TODO: mark completed
+  renderNextTask(currentTaskId + 1, res);
+});
+
+app.post("/task/skipped/:taskIndex", (req: Request, res: Response) => {
+  const currentTaskId = parseInt(req.params.taskIndex);
+  console.log("Task skipped:", currentTaskId);
+  // TODO: mark skipped
+  renderNextTask(currentTaskId + 1, res);
 });
 
 app.listen(port, () => {

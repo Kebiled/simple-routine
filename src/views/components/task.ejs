@@ -1,3 +1,11 @@
-<div hx-get="/next/<%= taskIndex + 1 %>" hx-trigger="click" hx-swap="outerHTML">
-  <%- taskName %>
+<div id="htmx-container" hx-target="#htmx-container" hx-swap="outerHTML">
+  <div class="task-container">
+    <div id="task">
+      <%- taskName %>
+    </div>
+  </div>
+  <div class="btn-container">
+    <button id="completed-btn" hx-post="task/completed/<%= taskIndex %>">Completed</button>
+    <button id="skipped-btn" hx-post="task/skipped/<%= taskIndex %>">Skipped</button>
+  </div>
 </div>
