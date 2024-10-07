@@ -10,6 +10,7 @@ type Task = {
   status: string;
 };
 
+// TODO: move to db
 const TASKS: Task[] = [
   { id: 1, name: "First Task", status: "pending" },
   { id: 2, name: "Second Task", status: "pending" },
