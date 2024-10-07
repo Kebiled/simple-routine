@@ -59,16 +59,8 @@
   </header>
 
   <main>
-    <div id="htmx-container" hx-target="#htmx-container" hx-swap="outerHTML">
-      <div class="task-container" hx-get="/begin" hx-trigger="click">
-        <div>
-          Click here to begin
-        </div>
-      </div>
-      <div class="btn-container">
-        <button id="completed-btn" disabled>Completed</button>
-        <button id="skipped-btn" disabled>Skipped</button>
-      </div>
+    <div id="begin" hx-get="/begin" hx-trigger="click" hx-swap="outerHTML">
+      Welcome to simple-routine. Click here to begin
     </div>
   </main>
 

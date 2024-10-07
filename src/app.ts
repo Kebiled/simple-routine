@@ -43,6 +43,7 @@ app.get("/", (req: Request, res: Response) => {
 });
 
 app.get("/begin", (req: Request, res: Response) => {
+  // TODO: get first non-marked task instead of "0"
   renderNextTask(0, res);
 });
 
