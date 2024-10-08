@@ -2,7 +2,7 @@ import sqlite3 from "sqlite3";
 import { SqlRoutineType, SqlTaskType, SqlUserType } from "../types/sqlite";
 
 const getUserRoutineSql = `
-	SELECT routine.id, datetime_last_edited
+	SELECT routine.id as id, datetime_last_edited
 	FROM routine
 	JOIN user
 		ON routine.user_id = user.id
@@ -10,7 +10,7 @@ const getUserRoutineSql = `
 `;
 
 const getAllRoutineTasksSql = `
-	SELECT description, status, task_order
+	SELECT id, description, status, task_order
 	FROM task
 	WHERE routine_id = $routineId
 	ORDER BY task_order ASC;
@@ -162,7 +162,7 @@ export async function updateTaskStatus(
   const db = getDatabase();
   console.log("Updating task", taskId);
   await runVoidDBOperation(
-    createTaskSql,
+    updateTaskStatusSql,
     {
       $taskId: taskId,
       $status: status,
