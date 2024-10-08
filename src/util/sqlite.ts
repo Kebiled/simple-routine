@@ -6,29 +6,35 @@ const getUserRoutineSql = `
 	FROM routine
 	JOIN user
 		ON routine.user_id = user.id
-	WHERE routine.user_id = ?;
+	WHERE routine.user_id = $userId;
 `;
 
 const getAllRoutineTasksSql = `
 	SELECT description, status, task_order
 	FROM task
-	WHERE routine_id = ?
+	WHERE routine_id = $routineId
 	ORDER BY task_order ASC;
 `;
 
 const createUserRoutineSql = `
 	INSERT INTO routine (user_id, datetime_last_edited)
-	VALUES (?, ?);
+	VALUES ($userId, $datetimeLastEdited);
 `;
 
 const createUserSql = `
 	INSERT INTO user (id, name)
-	VALUES (?, ?);
+	VALUES ($id, $name);
 `;
 
 const createTaskSql = `
 	INSERT INTO task (routine_id, description, status, task_order)
-	VALUES (?, ?, ?, ?);
+	VALUES ($routineId, $description, $status, $taskOrder);
+`;
+
+const updateTaskStatusSql = `
+	UPDATE task
+	SET status = $status
+	WHERE task.id = $taskId
 `;
 
 export function getDatabase() {
@@ -37,7 +43,7 @@ export function getDatabase() {
     sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE,
     (err) => {
       if (err) {
-        return console.error(err.message);
+        console.error(err.message);
       }
       console.log("Connected to simple_routine database.");
     }
@@ -53,17 +59,29 @@ export function closeDatabase(db: sqlite3.Database) {
   });
 }
 
-export async function createUserRoutine(userId: string) {
-  const db = getDatabase();
-  console.log("Creating user routine");
+export async function runVoidDBOperation(
+  sqlString: string,
+  sqlParams: Object,
+  db: sqlite3.Database
+) {
   await new Promise<void>((resolve, reject) => {
-    db.run(createUserRoutineSql, [userId, new Date()], (err) => {
+    db.run(sqlString, { ...sqlParams }, (err) => {
       if (err) {
         reject(err);
       }
       resolve();
     });
   });
+}
+
+export async function createUserRoutine(userId: string) {
+  const db = getDatabase();
+  console.log("Creating user routine");
+  await runVoidDBOperation(
+    createUserRoutineSql,
+    { $userId: userId, $datetimeLastEdited: new Date() },
+    db
+  );
   closeDatabase(db);
 }
 
@@ -72,33 +90,28 @@ export async function getUserRoutine(
 ): Promise<SqlRoutineType | undefined> {
   const db = getDatabase();
   console.log("Attempting to get routine for user", userId);
-  const row = await new Promise((resolve, reject) => {
-    db.get(getUserRoutineSql, [userId], (err, row) => {
-      if (err) {
-        reject(err);
-      } else {
-        resolve(row);
-      }
-    });
-  });
+  const row = await new Promise<SqlRoutineType | undefined>(
+    (resolve, reject) => {
+      db.get(getUserRoutineSql, { $userId: userId }, (err, row) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(row ? (row as SqlRoutineType) : undefined);
+        }
+      });
+    }
+  );
 
   closeDatabase(db);
 
   console.log("Have routine for user", userId);
-  return row as SqlRoutineType | undefined;
+  return row;
 }
 
 export async function createUser(userId: string, name: string) {
   const db = getDatabase();
   console.log("Creating user");
-  await new Promise<void>((resolve, reject) => {
-    db.run(createUserSql, [userId, name], (err) => {
-      if (err) {
-        reject(err);
-      }
-      resolve();
-    });
-  });
+  await runVoidDBOperation(createUserSql, { $id: userId, $name: name }, db);
   closeDatabase(db);
 }
 
@@ -109,18 +122,16 @@ export async function createTask(
 ) {
   const db = getDatabase();
   console.log("Creating task");
-  await new Promise<void>((resolve, reject) => {
-    db.run(
-      createTaskSql,
-      [routineId, description, "pending", taskOrder],
-      (err) => {
-        if (err) {
-          reject(err);
-        }
-        resolve();
-      }
-    );
-  });
+  await runVoidDBOperation(
+    createTaskSql,
+    {
+      $routineId: routineId,
+      $description: description,
+      $status: "pending",
+      $taskOrder: taskOrder,
+    },
+    db
+  );
   closeDatabase(db);
 }
 
@@ -129,15 +140,35 @@ export async function getAllRoutineTasks(
 ): Promise<SqlTaskType[] | undefined> {
   const db = getDatabase();
   console.log("Getting tasks for routine", routineId);
-  const rows = await new Promise((resolve, reject) => {
-    db.all(getAllRoutineTasksSql, [routineId], (err, rows) => {
-      if (err) {
-        reject(err);
-      } else {
-        resolve(rows);
-      }
-    });
-  });
+  const rows = await new Promise<SqlTaskType[] | undefined>(
+    (resolve, reject) => {
+      db.all(getAllRoutineTasksSql, { $routineId: routineId }, (err, rows) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(rows ? (rows as SqlTaskType[]) : undefined);
+        }
+      });
+    }
+  );
   console.log("Have tasks for routine", routineId);
-  return rows as SqlTaskType[] | undefined;
+  return rows;
+}
+
+export async function updateTaskStatus(
+  taskId: number,
+  status: "PENDING" | "COMPLETED"
+) {
+  const db = getDatabase();
+  console.log("Updating task", taskId);
+  await runVoidDBOperation(
+    createTaskSql,
+    {
+      $taskId: taskId,
+      $status: status,
+    },
+    db
+  );
+  closeDatabase(db);
+  console.log("Task updated", taskId);
 }
