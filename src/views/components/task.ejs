@@ -8,4 +8,8 @@
     <button id="completed-btn" hx-post="task/completed/<%= taskIndex %>">Completed</button>
     <button id="skipped-btn" hx-post="task/skipped/<%= taskIndex %>">Skipped</button>
   </div>
+  <div class="stats-container">
+    <p>Completed: <%- completed %></p>
+    <p>Skipped: <%- skipped %></p>
+  </div>
 </div>

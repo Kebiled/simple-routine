@@ -56,3 +56,16 @@ function main() {
 main();
 
 closeDatabase(db);
+
+// MISC.
+
+function addColumnsToRoutine() {
+  db.run(`
+    ALTER TABLE routine
+    ADD total_skipped INTEGER;
+  `);
+  db.run(`
+    ALTER TABLE routine
+    ADD total_completed INTEGER;
+  `);
+}

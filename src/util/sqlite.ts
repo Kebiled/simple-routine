@@ -1,8 +1,13 @@
 import sqlite3 from "sqlite3";
-import { SqlRoutineType, SqlTaskType, SqlUserType } from "../types/sqlite";
+import {
+  SqlRoutineType,
+  SqlTaskType,
+  SqlUserType,
+  TASK_STATUS,
+} from "../types/sqlite";
 
 const getUserRoutineSql = `
-	SELECT routine.id as id, datetime_last_edited
+	SELECT routine.id as id, datetime_last_edited, total_skipped, total_completed
 	FROM routine
 	JOIN user
 		ON routine.user_id = user.id
@@ -10,15 +15,15 @@ const getUserRoutineSql = `
 `;
 
 const getAllRoutineTasksSql = `
-	SELECT id, description, status, task_order
+	SELECT id, description, status, task_order, routine_id
 	FROM task
 	WHERE routine_id = $routineId
 	ORDER BY task_order ASC;
 `;
 
 const createUserRoutineSql = `
-	INSERT INTO routine (user_id, datetime_last_edited)
-	VALUES ($userId, $datetimeLastEdited);
+	INSERT INTO routine (user_id, datetime_last_edited, total_skipped, total_completed)
+	VALUES ($userId, $datetimeLastEdited, 0, 0);
 `;
 
 const createUserSql = `
@@ -34,7 +39,19 @@ const createTaskSql = `
 const updateTaskStatusSql = `
 	UPDATE task
 	SET status = $status
-	WHERE task.id = $taskId
+	WHERE task.id = $taskId;
+`;
+
+const updateAllRoutineTasksSql = `
+	UPDATE task
+	SET status = $status
+	WHERE routine_id = $routineId;
+`;
+
+const updateRoutineTotals = `
+	UPDATE routine
+	SET datetime_last_edited = $date, total_skipped = total_skipped + $amountSkipped, total_completed = total_completed + $amountCompleted
+	WHERE id = $routineId;
 `;
 
 export function getDatabase() {
@@ -157,10 +174,21 @@ export async function getAllRoutineTasks(
 
 export async function updateTaskStatus(
   taskId: number,
-  status: "PENDING" | "COMPLETED"
+  routineId: number,
+  status: TASK_STATUS
 ) {
   const db = getDatabase();
-  console.log("Updating task", taskId);
+  const date = new Date();
+  await runVoidDBOperation(
+    updateRoutineTotals,
+    {
+      $routineId: routineId,
+      $date: date.getTime(),
+      $amountSkipped: status === TASK_STATUS.SKIPPED ? 1 : 0,
+      $amountCompleted: status === TASK_STATUS.COMPLETED ? 1 : 0,
+    },
+    db
+  );
   await runVoidDBOperation(
     updateTaskStatusSql,
     {
@@ -171,4 +199,19 @@ export async function updateTaskStatus(
   );
   closeDatabase(db);
   console.log("Task updated", taskId);
+}
+
+export async function resetAllRoutineTasksToPending(routineId: number) {
+  const db = getDatabase();
+  console.log("Resetting tasks to pending for routine", routineId);
+  await runVoidDBOperation(
+    updateAllRoutineTasksSql,
+    {
+      $routineId: routineId,
+      $status: TASK_STATUS.PENDING,
+    },
+    db
+  );
+  closeDatabase(db);
+  console.log("All tasks set to PENDING for routine", routineId);
 }
